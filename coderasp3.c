@@ -5,19 +5,8 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
 #include <errno.h>
-#include "aesArduino.h"
-#define PORTA 8888
-#define TAMANHO_PAYLOAD 16
-typedef struct frame
-	{
-        unsigned short id;
-        unsigned char command;
-        unsigned char size;
-        unsigned char payload[TAMANHO_PAYLOAD];
-	}pacoteFrame;
 
 
 void error2( char *msg ) {
@@ -42,6 +31,7 @@ void sendData( int sockfd, int x ) {
 int getData( int sockfd ) {
   char buffer[32];
   int n;
+
   if ( (n = read(sockfd,buffer,31) ) < 0 )
     error2( (char *)( "ERROR reading from socket") );
   buffer[n] = '\0';
@@ -49,13 +39,9 @@ int getData( int sockfd ) {
 }
 
 int main(int argc, char *argv[]) {
-     int sockfd, newsockfd, portno = PORTA, clilen;
+     int sockfd, newsockfd, portno = 51717, clilen;
      char buffer[256];
      struct sockaddr_in serv_addr, cli_addr;
-
-	    pacoteFrame dado;
-	    pacoteFrame dadoConfig;
-	    pacoteFrame dadoSensor;
      int n;
      int data;
 
@@ -76,48 +62,29 @@ int main(int argc, char *argv[]) {
      clilen = sizeof(cli_addr);
   
      //--- infinite wait on a connection ---
-    memset(&dadoSensor, 0, sizeof(dadoSensor));
-    memset(&dadoConfig, 0, sizeof(dadoConfig));
      while ( 1 ) {
-
-	memset(&dado, 0, sizeof(dado));
         printf( "waiting for new client...\n" );
         if ( ( newsockfd = accept( sockfd, (struct sockaddr *) &cli_addr, (socklen_t*) &clilen) ) < 0 )
             error2( (char *)("ERROR on accept") );
-
         printf( "opened new communication with client\n" );
+        while ( 1 ) {
              //---- wait for a number from client ---
-             data =  read(newsockfd, &dado, sizeof(dado));
+             data = getData( newsockfd );
              printf( "got %d\n", data );
-	     printf("Resposta: ID: %d / COMMAND: %c / SIZE: %d / Payload: %s \n", dado.id,dado.command,dado.size,dado.payload);
-
-	descriptografarPacote(dado.payload,TAMANHO_PAYLOAD);
- 	if(dado.command=='a')
-        {
-	        memset(&dadoConfig, 0, sizeof(dadoConfig));
-            	dadoConfig=dado;
-            	write(newsockfd, &dadoSensor, sizeof(dadoSensor));
-         	 	     printf("\n *****\nDADO ENVIADO: ID: %d / COMMAND: %c / SIZE: %d / Payload: %s \n", dadoSensor.id,dadoSensor.command,dadoSensor.size,dadoSensor.payload);
-            	printf("Atualizado para %s\n", dadoConfig.payload);
-            	printf("uns short : %d\n", sizeof(unsigned short));
-        }
-	if(dado.command=='s')
-	{
-                memset(&dadoSensor, 0, sizeof(dadoSensor));		
-		dadoSensor=dado;
-      	    	write(newsockfd, &dadoConfig, sizeof(dadoConfig));
-	}
-	
              if ( data < 0 ) 
-                printf("no response");
+                break;
                 
-             
+             data = func( data );
 
              //--- send new data back --- 
-             printf( "sending back %d\n", dado );
-	     //write( newsockfd, &dado, sizeof(dado) );
-	     sleep(1);
+             printf( "sending back %d\n", data );
+             sendData( newsockfd, data );
         }
         close( newsockfd );
+
+        //--- if -2 sent by client, we can quit ---
+        if ( data == -2 )
+          break;
+     }
      return 0; 
 }
