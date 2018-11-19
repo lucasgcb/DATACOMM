@@ -9,5 +9,5 @@ openssl enc -d -aes-256-cbc -in encrypted.data -out un_encrypted.data
 
 gcc -o decrypter aes128_main.c -I /usr/include/openssl -L /usr/lib/ssl -lcrypto
 
-gcc -o servidorCryp tcpServidorCzao.c -I /usr/include/openssl -L /usr/lib/ssl -lcrypto
+gcc -o servidorCryp tcpServidorCzao.c -I /usr/include/openssl -L /usr/lib/ssl -lcrypto -lcurl
 

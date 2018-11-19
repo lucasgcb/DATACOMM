@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <openssl/aes.h>
- 
+#define TAMANHO_PAYLOAD 16
 /* AES key for Encryption and Decryption */
 const static unsigned char aes_key[]={'k','k','e','a','e','m','e','n',0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
  
@@ -30,8 +30,7 @@ int descriptografarPacote(unsigned char *aes_input, int len)
 
 
         print_data("\n Decrypted",dec_out, sizeof(dec_out));
-
-        return 0;
+        return atoi(dec_out);
 }
  
 void print_data(const char *tittle, const void* data, int len)
