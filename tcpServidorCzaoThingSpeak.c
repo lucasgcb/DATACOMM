@@ -8,9 +8,10 @@
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include "aesArduino.h"
 #include <curl/curl.h>
-
+#define API_KEY "DP33DR83R67WG8FE"
 #define PORTA 8888
 //#define TAMANHO_PAYLOAD 16
 typedef struct frame
@@ -28,14 +29,25 @@ int send2ThingSpeak(int payload )
   CURLcode res;
 
 	 printf("Attempting to curl");
-	 char temp[TAMANHO_PAYLOAD];
-	sprintf(temp,"%ld", payload);
-	printf("\n %s \n",temp);
+	 char field1[TAMANHO_PAYLOAD+8];
+	 char field2[TAMANHO_PAYLOAD+8];
+	 char field3[TAMANHO_PAYLOAD+8];
+	int fieldCount=1;
+	sprintf(field1,"&field%d=%ld", fieldCount++, payload);
+	sprintf(field2,"&field%d=%ld", fieldCount++, payload);
+	sprintf(field3,"&field%d=%ld", fieldCount++, payload);
+	printf("\n %s \n",field1);
   curl = curl_easy_init();
   if(curl) {
 	 printf("Curling");
-    
-    curl_easy_setopt(curl, CURLOPT_URL, "https://api.thingspeak.com/update?api_key=DP33DR83R67WG8FE&field1=255&field2=255&field3=255");
+    char destinationUrl[255];
+    strcat(destinationUrl,"https://api.thingspeak.com/update?api_key=");
+    strcat(destinationUrl,API_KEY);
+    strcat(destinationUrl,field1);
+/*    strcat(destinationUrl,field2);
+    strcat(destinationUrl,field3);*/
+	printf("%s\n",destinationUrl);
+    curl_easy_setopt(curl, CURLOPT_URL, destinationUrl);
     /* example.com is redirected, so we tell libcurl to follow redirection */
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
@@ -122,6 +134,7 @@ int main(int argc, char *argv[]) {
         printf( "opened new communication with client\n" );
              //---- wait for a number from client ---
              data =  read(newsockfd, &dado, sizeof(dado));
+	
              printf( "got %d\n", data );
 	     printf("Resposta: ID: %d / COMMAND: %c / SIZE: %d / Payload: %s \n", dado.id,dado.command,dado.size,dado.payload);
 
@@ -135,12 +148,16 @@ int main(int argc, char *argv[]) {
          	 	     printf("\n *****\nDADO ENVIADO: ID: %d / COMMAND: %c / SIZE: %d / Payload: %s \n", dadoSensor.id,dadoSensor.command,dadoSensor.size,dadoSensor.payload);
             	printf("Atualizado para %s\n", dadoConfig.payload);
             	printf("uns short : %d\n", sizeof(unsigned short));
+                close( newsockfd );
+
         }
 	if(dado.command=='s')
 	{
                 memset(&dadoSensor, 0, sizeof(dadoSensor));		
-		dadoSensor=dado;
-      	    	write(newsockfd, &dadoConfig, sizeof(dadoConfig));
+		char kk = 'k';
+      	    	write(newsockfd, &kk, 1);
+                close( newsockfd );
+
 	}
 	
              if ( data < 0 ) 
@@ -150,11 +167,10 @@ int main(int argc, char *argv[]) {
 
              //--- send new data back --- 
              printf( "sending back %d\n", dado );
-	     //write( newsockfd, &dado, sizeof(dado) );
-	     sleep(1);
+//	     write( newsockfd, &dado, sizeof(dado) );
+	     sleep(3);
 
         }
-             close( newsockfd );
 
      return 0; 
 }
