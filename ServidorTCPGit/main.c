@@ -67,6 +67,8 @@ int main(int argc, char *argv[])
 	printf("Aguardando...\n");
 
     memset(&dadoConfig, 0, sizeof(dadoConfig));
+    memset(&dado, 0, sizeof(dado));
+    int dadoSensor = 0;
 	while (1) {
         long c=10050;
 
@@ -75,18 +77,24 @@ int main(int argc, char *argv[])
 		if ((socketCliente = accept(socketServidor, NULL, NULL)) == SOCKET_ERROR) {
 			continue;
 		}
-
+        char command;
 		bytes = recv(socketCliente, &dado, sizeof(dado), 0);
+		printf("Resposta: ID: %d / COMMAND: %c / SIZE: %d / Payload: %s \n", dado.id,dado.command,dado.size,dado.payload);
+		if(dado.command=='s')
+            dadoSensor = atoi(dado.payload);
+
+        printf("DadoSensor: %d",dadoSensor);
         bufferEntrada[bytes] = '\0';
 
         printf("SocketCliente: %d\n",socketCliente);
+
             unsigned char httpHeader[] = "HTTP/1.1 200 OK\r\nContent-Type:text/html\r\nConnection:Keep-Alive\r\nKeep-Alive:timeout=5,max=100\r\nRefresh:5\r\n\r\n";
             unsigned char temp[15];
             strcat(GETZao.httpHeader, httpHeader);
-            int random = rand()*10;
-            sprintf(temp, "%d", random);
+            //int random = rand()*10;
+            sprintf(temp, "%d", dadoSensor);
 
-            strcat(GETZao.msg, "<!DOCTYPE HTML><html>kk eaemen ");
+            strcat(GETZao.msg, "<!DOCTYPE HTML><html>Dado no servidor meu chapa: ");
             strcat(GETZao.msg, temp);
             strcat(GETZao.msg, " </html>\r\n");
 
